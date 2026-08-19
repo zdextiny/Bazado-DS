@@ -172,8 +172,6 @@ main.o: D:/Proyectos/bazas-nds/source/main.c \
  D:/Proyectos/bazas-nds/source/particle.h \
  D:/Proyectos/bazas-nds/source/play_button_0.h \
  D:/Proyectos/bazas-nds/source/play_button_1.h \
- D:/Proyectos/bazas-nds/source/play_button_2.h \
- D:/Proyectos/bazas-nds/source/play_button_3.h \
  D:/Proyectos/bazas-nds/source/play_button_shared.h \
  D:/Proyectos/bazas-nds/source/ancho_banner_0.h \
  D:/Proyectos/bazas-nds/source/ancho_banner_1.h \
@@ -359,8 +357,6 @@ D:/Proyectos/bazas-nds/source/sling_band.h:
 D:/Proyectos/bazas-nds/source/particle.h:
 D:/Proyectos/bazas-nds/source/play_button_0.h:
 D:/Proyectos/bazas-nds/source/play_button_1.h:
-D:/Proyectos/bazas-nds/source/play_button_2.h:
-D:/Proyectos/bazas-nds/source/play_button_3.h:
 D:/Proyectos/bazas-nds/source/play_button_shared.h:
 D:/Proyectos/bazas-nds/source/ancho_banner_0.h:
 D:/Proyectos/bazas-nds/source/ancho_banner_1.h:

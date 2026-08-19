@@ -1,25 +1,19 @@
-# Boton "jugar/continuar" animado (title, fin de mano, fin de partida):
-# 4 frames del usuario (Play1..4.png -- idle, apretado, rebote,
-# vuelta a idle), reescalados de 224x112 a 64x32 con NEAREST NEIGHBOR
-# -- el arte fuente ya es completamente plano (Play1/3/4 tienen 5
-# colores, Play2 solo 2, sin degrade ni antialiasing), asi que un
-# resize con blending de por medio inventaria colores nuevos de la
-# nada; nearest solo re-muestrea los que ya existen.
-#
-# OJO: escalar 224x112 a 64x32 JUSTO (edge-to-edge, sin margen) perdia
-# detalle de las esquinas redondeadas y de la sombra rosa/roja de abajo
-# -- quedaban recortadas contra el borde del sprite. Ahora se deja un
-# margen fijo (MARGIN px a cada lado) y el contenido se escala un poco
-# MAS CHICO que el canvas entero para entrar completo con aire
-# alrededor, centrado -- mismo criterio que Convert-CardTo32 en
-# prep-assets.ps1 (centrar la caja de contenido, no estirarla al borde).
+# Boton "jugar/continuar" (title, fin de mano, fin de partida): ahora
+# 2 frames nomas (antes 4) -- sin apretar / apretado, arte nuevo del
+# usuario (PlayButton1/2.png, un triangulo blanco con un brillo
+# rosa/naranja abajo que desaparece al apretar). Se agranda el lienzo
+# nativo de 64x32 a 64x64 (el arte fuente ya es 64x61, casi cuadrado)
+# para que al aplicarle el mismo 2x por afin de siempre en main.c de
+# 128x64 pase a 128x128 -- bastante mas grande, ocupando gran parte de
+# la pantalla de abajo, sin arriesgar recorte (sizeDouble reserva
+# EXACTO el doble del nativo con 2x, ver notas en main.c).
 Add-Type -AssemblyName System.Drawing
 
-$src = "C:\Users\Dex\Desktop\Resourses\Mazo"
+$src = "D:\PixelArt123\2026"
 $gfxOut = "D:\Proyectos\bazas-nds\gfx"
 $targetW = 64
-$targetH = 32
-$margin = 3
+$targetH = 64
+$margin = 2
 
 function Convert-PlayButtonFrame($srcPath, $destPath) {
   $orig = [System.Drawing.Bitmap]::FromFile($srcPath)
@@ -58,15 +52,13 @@ function Convert-PlayButtonFrame($srcPath, $destPath) {
   $small.Dispose()
 }
 
-Convert-PlayButtonFrame (Join-Path $src "Play1.png") (Join-Path $gfxOut "play_button_0.png")
-Convert-PlayButtonFrame (Join-Path $src "Play2.png") (Join-Path $gfxOut "play_button_1.png")
-Convert-PlayButtonFrame (Join-Path $src "Play3.png") (Join-Path $gfxOut "play_button_2.png")
-Convert-PlayButtonFrame (Join-Path $src "Play4.png") (Join-Path $gfxOut "play_button_3.png")
+Convert-PlayButtonFrame (Join-Path $src "PlayButton1.png") (Join-Path $gfxOut "play_button_0.png")
+Convert-PlayButtonFrame (Join-Path $src "PlayButton2.png") (Join-Path $gfxOut "play_button_1.png")
 
-# Chequeo de colores combinados (paleta COMPARTIDA entre los 4 frames,
-# -pS -- tienen que entrar los 4 en 16 colores contando el magenta).
+# Chequeo de colores combinados (paleta COMPARTIDA entre los 2 frames,
+# -pS -- tienen que entrar en 16 colores contando el magenta).
 $allColors = New-Object 'System.Collections.Generic.HashSet[int]'
-foreach ($i in 0..3) {
+foreach ($i in 0..1) {
   $img = [System.Drawing.Bitmap]::FromFile((Join-Path $gfxOut "play_button_$i.png"))
   for ($y = 0; $y -lt $img.Height; $y++) {
     for ($x = 0; $x -lt $img.Width; $x++) {
@@ -75,7 +67,7 @@ foreach ($i in 0..3) {
   }
   $img.Dispose()
 }
-Write-Output "Boton jugar: $($allColors.Count) colores combinados (los 4 frames juntos, incluye magenta)"
+Write-Output "Boton jugar: $($allColors.Count) colores combinados (los 2 frames juntos, incluye magenta)"
 if ($allColors.Count -gt 16) {
   Write-Warning "Mas de 16 colores combinados -- grit va a fallar o recortar mal, hace falta reducir el arte fuente."
 }

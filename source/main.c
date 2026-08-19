@@ -69,8 +69,6 @@
 #include "particle.h"
 #include "play_button_0.h"
 #include "play_button_1.h"
-#include "play_button_2.h"
-#include "play_button_3.h"
 #include "play_button_shared.h"
 #include "ancho_banner_0.h"
 #include "ancho_banner_1.h"
@@ -876,15 +874,22 @@ static const unsigned int* const BUTTON_TILES[7] = {
 #define PLAY_BUTTON_PALETTE_BANK 6
 #define PLAY_BUTTON_OAM_ID 30
 #define PLAY_BUTTON_AFFINE_ID 3 // oamSub ya usa 0 (cartas), 1 (botones numero), 2 (carta hero)
+// Lienzo nativo 64x64 (antes 64x32) -- el arte nuevo (PlayButton1/2.png,
+// ver make-play-button.ps1) es casi cuadrado, y de paso aprovecha el
+// maximo seguro con sizeDouble a 2x: el area reservada es SIEMPRE
+// nativo x2 sin importar la escala real (leccion aprendida con el
+// banner del ancho), asi que 64x64 a 2x = 128x128 es lo mas grande que
+// entra sin arriesgar recorte con un solo sprite.
 #define PLAY_BUTTON_NATIVE_W 64
-#define PLAY_BUTTON_NATIVE_H 32
+#define PLAY_BUTTON_NATIVE_H 64
 #define PLAY_BUTTON_SCALE_INV 128 // 2x, mismo truco de matriz afin que las cartas/botones
 #define PLAY_BUTTON_VISUAL_W 128
-#define PLAY_BUTTON_VISUAL_H 64
-// Centrado horizontal en las 256 columnas de la pantalla de abajo; fila
-// donde antes iba el texto de "presione para continuar"/"toca START".
+#define PLAY_BUTTON_VISUAL_H 128
+// Centrado horizontal en las 256 columnas de la pantalla de abajo;
+// centrado vertical tambien (128 de alto en 192 de pantalla, mismo
+// aire arriba y abajo -- (192-128)/2 = 32).
 #define PLAY_BUTTON_VISUAL_X ((256 - PLAY_BUTTON_VISUAL_W) / 2)
-#define PLAY_BUTTON_VISUAL_Y 80
+#define PLAY_BUTTON_VISUAL_Y ((192 - PLAY_BUTTON_VISUAL_H) / 2)
 // oamSet con sizeDouble NO recentra nada por su cuenta -- el X/Y que
 // se le pasa es directamente el top-left del area YA agrandada (se
 // probaron las otras dos variantes -- restar el padding, y restar la
@@ -892,13 +897,13 @@ static const unsigned int* const BUTTON_TILES[7] = {
 // confirmando que la posicion visual va SIN ningun ajuste).
 #define PLAY_BUTTON_OAM_X PLAY_BUTTON_VISUAL_X
 #define PLAY_BUTTON_OAM_Y PLAY_BUTTON_VISUAL_Y
-#define PLAY_BUTTON_FRAME_HOLD 4 // cuadros que dura cada frame de la animacion de apretado (a 60fps)
+#define PLAY_BUTTON_PRESS_HOLD_FRAMES 10 // cuanto se ve el frame "apretado" antes de seguir (a 60fps)
 
-static const unsigned int* const PLAY_BUTTON_TILES[4] = {
-  play_button_0Tiles, play_button_1Tiles, play_button_2Tiles, play_button_3Tiles,
+static const unsigned int* const PLAY_BUTTON_TILES[2] = {
+  play_button_0Tiles, play_button_1Tiles,
 };
-static const unsigned int PLAY_BUTTON_TILES_LEN[4] = {
-  play_button_0TilesLen, play_button_1TilesLen, play_button_2TilesLen, play_button_3TilesLen,
+static const unsigned int PLAY_BUTTON_TILES_LEN[2] = {
+  play_button_0TilesLen, play_button_1TilesLen,
 };
 
 // Pantalla de fin de partida (arriba): SOLO el texto ("Ganaste"/
@@ -1115,7 +1120,7 @@ static void setup_sprites(void) {
   subIconWonGfx = oamAllocateGfx(&oamSub, SpriteSize_16x16, SpriteColorFormat_16Color);
   dmaCopy(icon_wonTiles, subIconWonGfx, icon_wonTilesLen);
 
-  playButtonGfx = oamAllocateGfx(&oamSub, SpriteSize_64x32, SpriteColorFormat_16Color);
+  playButtonGfx = oamAllocateGfx(&oamSub, SpriteSize_64x64, SpriteColorFormat_16Color);
   dmaCopy(play_button_0Tiles, playButtonGfx, play_button_0TilesLen);
 
   // Pantalla de fin de partida: buffer reservado, el contenido se
@@ -1952,21 +1957,21 @@ static int run_match_end_menu(const char* title) {
   return chosen == 1;
 }
 
-// Boton "jugar/continuar" animado -- reemplaza el texto "toca/apreta
-// START" de la pantalla de titulo, fin de mano y fin de partida (las
-// tres eran variantes del mismo "esperar un toque para seguir", ahora
-// comparten este unico componente). frame 0 = idle.
+// Boton "jugar/continuar" -- reemplaza el texto "toca/apreta START" de
+// la pantalla de titulo, fin de mano y fin de partida (las tres eran
+// variantes del mismo "esperar un toque para seguir", ahora comparten
+// este unico componente). frame 0 = sin apretar, 1 = apretado.
 static void render_play_button(int frame) {
   dmaCopy(PLAY_BUTTON_TILES[frame], playButtonGfx, PLAY_BUTTON_TILES_LEN[frame]);
   oamSet(&oamSub, PLAY_BUTTON_OAM_ID, PLAY_BUTTON_OAM_X, PLAY_BUTTON_OAM_Y, 0,
-    PLAY_BUTTON_PALETTE_BANK, SpriteSize_64x32, SpriteColorFormat_16Color,
+    PLAY_BUTTON_PALETTE_BANK, SpriteSize_64x64, SpriteColorFormat_16Color,
     playButtonGfx, PLAY_BUTTON_AFFINE_ID, true, false, false, false, false);
   oamUpdate(&oamSub);
 }
 
 static void hide_play_button(void) {
   oamSet(&oamSub, PLAY_BUTTON_OAM_ID, 0, 0, 0, PLAY_BUTTON_PALETTE_BANK,
-    SpriteSize_64x32, SpriteColorFormat_16Color, playButtonGfx, -1, false, true, false, false, false);
+    SpriteSize_64x64, SpriteColorFormat_16Color, playButtonGfx, -1, false, true, false, false, false);
   oamUpdate(&oamSub);
 }
 
@@ -1988,11 +1993,8 @@ static int wait_for_play_button(void) {
     if (pressed & (KEY_TOUCH | KEY_A)) break;
   }
   play_sfx(SFX_BUTTON);
-  static const int PRESS_FRAMES[3] = { 1, 2, 3 };
-  for (int i = 0; i < 3; i++) {
-    render_play_button(PRESS_FRAMES[i]);
-    for (int f = 0; f < PLAY_BUTTON_FRAME_HOLD; f++) vsync();
-  }
+  render_play_button(1); // apretado -- se ve un toque antes de seguir
+  for (int f = 0; f < PLAY_BUTTON_PRESS_HOLD_FRAMES; f++) vsync();
   hide_play_button();
   return 0;
 }

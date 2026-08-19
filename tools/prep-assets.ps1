@@ -434,12 +434,13 @@ Move-Item (Join-Path $gfxOut "ancho_banner_3.c") $sourceOut -Force
 Move-Item (Join-Path $gfxOut "ancho_banner_3.h") $sourceOut -Force
 Write-Output "Banners de ancho (4 frases) convertidos a C con grit."
 
-# Boton "jugar/continuar" animado (title, fin de mano, fin de partida),
-# 4 frames -- misma logica que el logo de titulo (paleta compartida
-# entre los 4, -m! sprite).
+# Boton "jugar/continuar" (title, fin de mano, fin de partida), 2
+# frames -- sin apretar / apretado (paleta compartida entre los 2,
+# -m! sprite). Lienzo 64x64 (antes 64x32) para que se vea mas grande
+# en pantalla -- ver notas en make-play-button.ps1 y en main.c.
 powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "make-play-button.ps1") | Out-Null
 Push-Location $gfxOut
-& $grit "play_button_0.png" "play_button_1.png" "play_button_2.png" "play_button_3.png" -ftc -gB4 -gt -gTFF00FF -pS -Oplay_button_shared -Splay_button_shared -m! 2>&1
+& $grit "play_button_0.png" "play_button_1.png" -ftc -gB4 -gt -gTFF00FF -pS -Oplay_button_shared -Splay_button_shared -m! 2>&1
 Pop-Location
 Move-Item (Join-Path $gfxOut "play_button_shared.c") $sourceOut -Force
 Move-Item (Join-Path $gfxOut "play_button_shared.h") $sourceOut -Force
@@ -447,11 +448,7 @@ Move-Item (Join-Path $gfxOut "play_button_0.c") $sourceOut -Force
 Move-Item (Join-Path $gfxOut "play_button_0.h") $sourceOut -Force
 Move-Item (Join-Path $gfxOut "play_button_1.c") $sourceOut -Force
 Move-Item (Join-Path $gfxOut "play_button_1.h") $sourceOut -Force
-Move-Item (Join-Path $gfxOut "play_button_2.c") $sourceOut -Force
-Move-Item (Join-Path $gfxOut "play_button_2.h") $sourceOut -Force
-Move-Item (Join-Path $gfxOut "play_button_3.c") $sourceOut -Force
-Move-Item (Join-Path $gfxOut "play_button_3.h") $sourceOut -Force
-Write-Output "Boton jugar (4 frames) convertido a C con grit."
+Write-Output "Boton jugar (2 frames) convertido a C con grit."
 
 # Pantalla de la productora (arranque, antes que nada mas): 2 frames de
 # BITMAP de pantalla completa (256x192, no sprites/tiles -- ver
