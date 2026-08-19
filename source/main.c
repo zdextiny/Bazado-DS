@@ -1522,8 +1522,6 @@ static void idle_hand_drag_step(GameState* state) {
   hand_slide_tick(state, d->cursorIndex, d->dragIdx);
 }
 
-#define SWEAT_RANK_THRESHOLD 8 // rank <= esto (valor numerico <=6) es "carta floja" para el sting nervioso
-
 // Quien va ganando la baza en este momento (mayor rank jugado hasta
 // ahora), sin importar si es "sweat-worthy" o no -- -1 si todavia no
 // se jugo ninguna carta. Usado tanto para el marco verde (.card-leader
@@ -1640,7 +1638,6 @@ static void setup_audio(void) {
   mmLoadEffect(SFX_GAMEWIN);
   mmLoadEffect(SFX_COIN);
   mmLoadEffect(SFX_ANCHO);
-  mmLoadEffect(SFX_NERVOUS);
   mmLoadEffect(SFX_PRODCOIN);
   mmLoadEffect(SFX_PRODARCADE);
 }
@@ -1739,12 +1736,11 @@ static int is_ancho(Card card) {
 
 // Sonidos de jugar una carta (humano o bot, misma logica para los dos):
 // el golpe de jugarla siempre; si con esta carta se pasa a liderar la
-// baza, ademas la "moneda" (y, si la carta es floja o el que gano ya
-// iba pasado de lo que predijo, un sting nervioso de mas); y aparte, si
-// es cualquiera de los dos anchos (as de espada o de basto), su sonido
-// propio. Se llama DESPUES de que game_play_card ya la agrego a
-// trickCardsPlayed, asi que la ultima entrada es justo esta carta.
-static void play_card_sfx(const GameState* state, Card card, int playerId) {
+// baza, ademas la "moneda"; y aparte, si es cualquiera de los dos
+// anchos (as de espada o de basto), su sonido propio. Se llama DESPUES
+// de que game_play_card ya la agrego a trickCardsPlayed, asi que la
+// ultima entrada es justo esta carta.
+static void play_card_sfx(const GameState* state, Card card) {
   play_sfx(SFX_PLAY);
 
   int priorMaxRank = -999;
@@ -1755,12 +1751,6 @@ static void play_card_sfx(const GameState* state, Card card, int playerId) {
   int rank = card_rank(card);
   if (rank > priorMaxRank) {
     play_sfx(SFX_COIN);
-    if (state->trickCardsPlayedCount >= 2) {
-      const Player* owner = &state->players[playerId];
-      int lowCard = rank <= SWEAT_RANK_THRESHOLD;
-      int overPrediction = owner->prediction >= 0 && owner->tricksWon > owner->prediction;
-      if (lowCard || overPrediction) play_sfx(SFX_NERVOUS);
-    }
   }
   if (is_ancho(card)) {
     play_sfx(SFX_ANCHO);
@@ -2791,13 +2781,19 @@ static void show_main_menu(char* playerName) {
     if (activated == 0) {
       int botDiff = choose_difficulty(); // -1 = cancelado con B, volver directo al menu
       if (botDiff < 0) continue;
-      // El microfono (soplido del logo, ver update_title_logo_idle)
-      // solo hace falta en el menu -- apagarlo durante la partida evita
-      // que compita con el streaming de musica por CPU del ARM7 (el
-      // muestreo del mic es pesado y se notaba como audio saturado).
-      soundMicOff();
+      // OJO: el microfono (soplido del logo, ver update_title_logo_idle)
+      // solo hace falta en el menu, pero apagarlo/prenderlo de nuevo
+      // aca (soundMicOff antes de la partida + setup_mic al volver)
+      // dejaba TODO el audio mudo (efectos, a veces la musica tambien)
+      // si se entraba a jugar "de una" desde el arranque -- entrar a
+      // Opciones/Tutorial primero (mas tiempo con el mic ya estable
+      // antes de tocarlo) lo evitaba, lo que apunta a una condicion de
+      // carrera al reconfigurar el timer del mic a mitad de sesion.
+      // Se deja corriendo TODO el tiempo en vez de esto (arranca una
+      // sola vez en main(), nunca se vuelve a tocar) -- ya viene a un
+      // ritmo bajo (2000Hz, ver MIC_SAMPLE_RATE) que en su momento
+      // resolvio el audio saturado sin necesidad de apagarlo.
       run_match(playerName, (Difficulty)botDiff); // vuelve aca cuando se pide "volver al menu" desde la pausa
-      setup_mic();
       // La partida pudo cortarse a mitad de cualquier pantalla -- se
       // limpia TODO (sprites Y el texto de las dos consolas -- este
       // ultimo quedaba pegado, por ejemplo "Mano N (X cartas)" o los
@@ -3428,7 +3424,7 @@ static void run_match(char* playerName, Difficulty botDiff) {
       } else {
         Card card = ai_decide_card(&state, actorId);
         if (game_play_card(&state, actorId, card)) {
-          play_card_sfx(&state, card, actorId);
+          play_card_sfx(&state, card);
           animate_trick_card_entering(actorId, card);
           if (is_ancho(card)) celebrate_ancho(&state, actorId);
         }
@@ -3657,7 +3653,7 @@ static void run_match(char* playerName, Difficulty botDiff) {
         Card card = state.players[HUMAN_ID].hand[idxToPlay];
         if (game_play_card(&state, HUMAN_ID, card)) {
           played = 1;
-          play_card_sfx(&state, card, HUMAN_ID);
+          play_card_sfx(&state, card);
           animate_human_card_play(idxToPlay, card, exitFromX, exitFromY);
           if (is_ancho(card)) celebrate_ancho(&state, HUMAN_ID);
           // Redibuja la mano YA, con la carta ya sacada — antes se
