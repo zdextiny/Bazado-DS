@@ -1,0 +1,15 @@
+#define SFX_ANCHO	0
+#define SFX_BUTTON	1
+#define SFX_CANCEL	2
+#define SFX_COIN	3
+#define SFX_DEAL	4
+#define SFX_GAMEWIN	5
+#define SFX_NERVOUS	6
+#define SFX_PLAY	7
+#define SFX_PRODARCADE	8
+#define SFX_PRODCOIN	9
+#define SFX_SHUFFLE	10
+#define SFX_TRICKWIN	11
+#define MSL_NSONGS	0
+#define MSL_NSAMPS	12
+#define MSL_BANKSIZE	12

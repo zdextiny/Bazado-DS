@@ -1,0 +1,25 @@
+
+//{{BLOCK(heart_full)
+
+//======================================================================
+//
+//	heart_full, 16x16@4, 
+//	Transparent color : FF,00,FF
+//	+ 4 tiles not compressed
+//	Total size: 128 = 128
+//
+//	Time-stamp: 2026-08-19, 01:28:21
+//	Exported by Cearn's GBA Image Transmogrifier, v0.9.2
+//	( http://www.coranac.com/projects/#grit )
+//
+//======================================================================
+
+#ifndef GRIT_HEART_FULL_H
+#define GRIT_HEART_FULL_H
+
+#define heart_fullTilesLen 128
+extern const unsigned int heart_fullTiles[32];
+
+#endif // GRIT_HEART_FULL_H
+
+//}}BLOCK(heart_full)
